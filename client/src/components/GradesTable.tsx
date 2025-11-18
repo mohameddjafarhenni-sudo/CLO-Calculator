@@ -88,37 +88,37 @@ export default function GradesTable() {
     {
       label: 'اختبار فصلي 1',
       fields: [
-        { key: 'quiz1_q1' as const, label: 'س1' },
-        { key: 'quiz1_q2' as const, label: 'س2' },
-        { key: 'quiz1_q3' as const, label: 'س3' },
-        { key: 'quiz1_q4' as const, label: 'س4' },
+        { key: 'quiz1_q1' as const, label: 'س1', outcomeCode: '1.1' },
+        { key: 'quiz1_q2' as const, label: 'س2', outcomeCode: '1.2' },
+        { key: 'quiz1_q3' as const, label: 'س3', outcomeCode: '2.2' },
+        { key: 'quiz1_q4' as const, label: 'س4', outcomeCode: '2.3' },
       ]
     },
     {
       label: 'اختبار فصلي 2',
       fields: [
-        { key: 'quiz2_q1' as const, label: 'س1' },
-        { key: 'quiz2_q2' as const, label: 'س2' },
-        { key: 'quiz2_q3' as const, label: 'س3' },
-        { key: 'quiz2_q4' as const, label: 'س4' },
+        { key: 'quiz2_q1' as const, label: 'س1', outcomeCode: '1.2' },
+        { key: 'quiz2_q2' as const, label: 'س2', outcomeCode: '1.3' },
+        { key: 'quiz2_q3' as const, label: 'س3', outcomeCode: '2.1' },
+        { key: 'quiz2_q4' as const, label: 'س4', outcomeCode: '1.3' },
       ]
     },
     {
       label: 'الواجبات',
       fields: [
-        { key: 'assignments_q1' as const, label: 'س1' },
-        { key: 'assignments_q2' as const, label: 'س2' },
-        { key: 'assignments_q3' as const, label: 'س3' },
-        { key: 'assignments_q4' as const, label: 'س4' },
+        { key: 'assignments_q1' as const, label: 'س1', outcomeCode: '1.2' },
+        { key: 'assignments_q2' as const, label: 'س2', outcomeCode: '1.3' },
+        { key: 'assignments_q3' as const, label: 'س3', outcomeCode: '2.2' },
+        { key: 'assignments_q4' as const, label: 'س4', outcomeCode: '2.3' },
       ]
     },
     {
       label: 'الاختبار النهائي',
       fields: [
-        { key: 'final_q1' as const, label: 'س1' },
-        { key: 'final_q2' as const, label: 'س2' },
-        { key: 'final_q3' as const, label: 'س3' },
-        { key: 'final_q4' as const, label: 'س4' },
+        { key: 'final_q1' as const, label: 'س1', outcomeCode: '1.2' },
+        { key: 'final_q2' as const, label: 'س2', outcomeCode: '2.2' },
+        { key: 'final_q3' as const, label: 'س3', outcomeCode: '1.2' },
+        { key: 'final_q4' as const, label: 'س4', outcomeCode: '2.3' },
       ]
     },
   ];
@@ -134,7 +134,7 @@ export default function GradesTable() {
           <TableHeader>
             <TableRow className="bg-[#37474F] hover:bg-[#37474F]">
               <TableHead className="text-white font-roboto font-medium text-sm text-center sticky right-0 bg-[#37474F] z-10">
-                رمز الناتج
+                الدرجة الكلية
               </TableHead>
               {assessmentGroups.map(group => (
                 <TableHead 
@@ -146,7 +146,7 @@ export default function GradesTable() {
                 </TableHead>
               ))}
               <TableHead className="text-white font-roboto font-medium text-sm text-right sticky right-0 bg-[#37474F] z-10">اسم الطالب</TableHead>
-              <TableHead className="text-white font-roboto font-medium text-sm text-right sticky right-0 bg-[#37474F] z-10">رقم السؤال</TableHead>
+              <TableHead className="text-white font-roboto font-medium text-sm text-right sticky right-0 bg-[#37474F] z-10">الرقم الجامعي</TableHead>
             </TableRow>
             <TableRow className="bg-[#37474F] hover:bg-[#37474F]">
               <TableHead className="text-white font-roboto font-medium text-xs text-center sticky right-0 bg-[#37474F] z-10 border-t border-white/20"></TableHead>
@@ -162,6 +162,23 @@ export default function GradesTable() {
               )}
               <TableHead className="text-white font-roboto font-medium text-xs text-center sticky right-0 bg-[#37474F] z-10 border-t border-white/20"></TableHead>
               <TableHead className="text-white font-roboto font-medium text-xs text-center sticky right-0 bg-[#37474F] z-10 border-t border-white/20"></TableHead>
+            </TableRow>
+            <TableRow className="bg-[#FFD54F] hover:bg-[#FFD54F]">
+              <TableHead className="text-[#37474F] font-roboto font-medium text-xs text-center sticky right-0 bg-[#FFD54F] z-10 border-t border-border">
+                رمز الناتج
+              </TableHead>
+              {assessmentGroups.map(group => 
+                group.fields.map(field => (
+                  <TableHead 
+                    key={`outcome-${field.key}`}
+                    className="text-[#37474F] font-roboto font-medium text-xs text-center border-t border-border"
+                  >
+                    {field.outcomeCode}
+                  </TableHead>
+                ))
+              )}
+              <TableHead className="text-[#37474F] font-roboto font-medium text-xs text-center sticky right-0 bg-[#FFD54F] z-10 border-t border-border"></TableHead>
+              <TableHead className="text-[#37474F] font-roboto font-medium text-xs text-center sticky right-0 bg-[#FFD54F] z-10 border-t border-border"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Edit, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface Student {
   id: string;
@@ -28,6 +29,8 @@ interface Student {
 }
 
 export default function StudentsTable() {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [students, setStudents] = useState<Student[]>([
     { id: '1', studentId: '202301001', name: 'أحمد محمد علي', email: 'ahmed@example.com', phone: '0501234567' },
     { id: '2', studentId: '202301002', name: 'فاطمة سعيد', email: 'fatima@example.com', phone: '0509876543' },
@@ -74,21 +77,88 @@ export default function StudentsTable() {
     setIsDialogOpen(false);
   };
 
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        // Skip header row if present
+        const dataLines = lines[0].includes('الرقم الجامعي') || lines[0].includes('studentId') 
+          ? lines.slice(1) 
+          : lines;
+        
+        const importedStudents: Student[] = dataLines.map((line, index) => {
+          const [studentId, name, email, phone] = line.split(',').map(s => s.trim());
+          return {
+            id: Date.now().toString() + index,
+            studentId: studentId || '',
+            name: name || '',
+            email: email || '',
+            phone: phone || ''
+          };
+        }).filter(s => s.studentId); // Only include rows with student ID
+
+        setStudents([...students, ...importedStudents]);
+        toast({
+          title: "تم استيراد البيانات",
+          description: `تم إضافة ${importedStudents.length} طالب`,
+        });
+        console.log('Imported students:', importedStudents);
+      } catch (error) {
+        toast({
+          title: "خطأ في الاستيراد",
+          description: "تأكد من صحة تنسيق الملف",
+          variant: "destructive",
+        });
+        console.error('Import error:', error);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="font-roboto font-medium text-xl text-foreground">قائمة الطلاب</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={handleAdd}
-              className="bg-chart-2 hover:bg-chart-2/90 text-white"
-              data-testid="button-add-student"
-            >
-              <Plus className="w-4 h-4 ml-2" />
-              إضافة طالب
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.txt"
+            onChange={handleImport}
+            className="hidden"
+            data-testid="input-import-file"
+          />
+          <Button 
+            onClick={() => fileInputRef.current?.click()}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary/10"
+            data-testid="button-import-students"
+          >
+            <Upload className="w-4 h-4 ml-2" />
+            استيراد من ملف
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={handleAdd}
+                className="bg-chart-2 hover:bg-chart-2/90 text-white"
+                data-testid="button-add-student"
+              >
+                <Plus className="w-4 h-4 ml-2" />
+                إضافة طالب
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-md" dir="rtl">
             <DialogHeader>
               <DialogTitle className="font-roboto">
@@ -150,7 +220,8 @@ export default function StudentsTable() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg border border-border overflow-hidden">
