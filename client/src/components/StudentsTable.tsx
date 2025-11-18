@@ -24,28 +24,29 @@ interface Student {
   studentId: string;
   name: string;
   email: string;
+  phone: string;
 }
 
 export default function StudentsTable() {
   const [students, setStudents] = useState<Student[]>([
-    { id: '1', studentId: '202301001', name: 'أحمد محمد علي', email: 'ahmed@example.com' },
-    { id: '2', studentId: '202301002', name: 'فاطمة سعيد', email: 'fatima@example.com' },
-    { id: '3', studentId: '202301003', name: 'محمد خالد', email: 'mohammed@example.com' },
+    { id: '1', studentId: '202301001', name: 'أحمد محمد علي', email: 'ahmed@example.com', phone: '0501234567' },
+    { id: '2', studentId: '202301002', name: 'فاطمة سعيد', email: 'fatima@example.com', phone: '0509876543' },
+    { id: '3', studentId: '202301003', name: 'محمد خالد', email: 'mohammed@example.com', phone: '0555551234' },
   ]);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [formData, setFormData] = useState({ studentId: '', name: '', email: '' });
+  const [formData, setFormData] = useState({ studentId: '', name: '', email: '', phone: '' });
 
   const handleAdd = () => {
     setEditingStudent(null);
-    setFormData({ studentId: '', name: '', email: '' });
+    setFormData({ studentId: '', name: '', email: '', phone: '' });
     setIsDialogOpen(true);
   };
 
   const handleEdit = (student: Student) => {
     setEditingStudent(student);
-    setFormData({ studentId: student.studentId, name: student.name, email: student.email });
+    setFormData({ studentId: student.studentId, name: student.name, email: student.email, phone: student.phone });
     setIsDialogOpen(true);
   };
 
@@ -128,6 +129,18 @@ export default function StudentsTable() {
                   dir="ltr"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="font-roboto font-medium text-sm">رقم الجوال</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="0501234567"
+                  data-testid="input-student-phone"
+                  dir="ltr"
+                />
+              </div>
               <Button 
                 onClick={handleSave}
                 className="w-full bg-chart-2 hover:bg-chart-2/90"
@@ -145,6 +158,7 @@ export default function StudentsTable() {
           <TableHeader>
             <TableRow className="bg-[#37474F] hover:bg-[#37474F]">
               <TableHead className="text-white font-roboto font-medium text-sm text-right">الإجراءات</TableHead>
+              <TableHead className="text-white font-roboto font-medium text-sm text-right">رقم الجوال</TableHead>
               <TableHead className="text-white font-roboto font-medium text-sm text-right">البريد الإلكتروني</TableHead>
               <TableHead className="text-white font-roboto font-medium text-sm text-right">اسم الطالب</TableHead>
               <TableHead className="text-white font-roboto font-medium text-sm text-right">الرقم الجامعي</TableHead>
@@ -179,6 +193,7 @@ export default function StudentsTable() {
                     </Button>
                   </div>
                 </TableCell>
+                <TableCell className="p-3 text-sm" dir="ltr">{student.phone}</TableCell>
                 <TableCell className="p-3 text-sm" dir="ltr">{student.email}</TableCell>
                 <TableCell className="p-3 text-sm font-medium">{student.name}</TableCell>
                 <TableCell className="p-3 text-sm" dir="ltr">{student.studentId}</TableCell>
