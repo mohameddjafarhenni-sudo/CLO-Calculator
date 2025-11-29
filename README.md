@@ -2,7 +2,7 @@
 
 ![App Screenshot](Screenshot.jpeg)
 
-Grade Outcomes Dashboard is a bilingual (Arabic/English) quality monitoring tool for higher-education courses. It centralises student rosters, assessment plans, grades, course learning outcomes (CLOs), and auto-generated Word reports so faculty can track progress, analyse achievement, and share structured evidence with quality assurance teams.
+Grade Outcomes Dashboard is a bilingual (Arabic/English) quality monitoring tool for higher-education courses. It centralises student rosters, assessment plans, grades, course learning outcomes (CLOs), and auto-generated Word reports so faculty can track progress, analyse achievement, and share structured evidence with quality assurance teams. The project is now a standalone Vite + React application that can deploy directly to Vercel as a static site.
 
 ## Key Features
 
@@ -24,14 +24,16 @@ Grade Outcomes Dashboard is a bilingual (Arabic/English) quality monitoring tool
 
 ```text
 c:/Grade_CalcMoha
-├── client/                # React dashboard (Vite)
-│   ├── src/components/    # UI components, tables, cards, export header
-│   ├── src/pages/         # Page-level containers (Home, Setup, 404)
-│   ├── src/lib/           # Shared helpers (report export data store)
-│   └── src/types/         # Shared TypeScript types
-├── server/                # Express API bootstrap (optional)
-├── shared/                # Shared schema definitions
+├── src/                   # React application source
+│   ├── components/        # UI components, tables, cards, export header
+│   ├── hooks/             # Custom React hooks
+│   ├── lib/               # Shared helpers (report export data store)
+│   ├── pages/             # Page-level containers (Home, Setup, 404)
+│   └── types/             # Shared TypeScript types
+├── public/                # Static assets served by Vite
 ├── Screenshot.jpeg        # UI preview used in README
+├── index.html             # Vite entry point
+├── package.json           # Vite/React project definition
 └── README.md              # Project documentation
 ```
 
@@ -46,8 +48,7 @@ c:/Grade_CalcMoha
    ```bash
    npm install
    ```
-2. **Configure environment** (if using the server): create `.env` with database/session configuration following your deployment needs.
-3. **Populate course info**
+2. **Populate course info**
    - Visit `/setup` to enter course metadata (module code, professor, etc.).
    - The data is stored locally (browser `localStorage`).
 
@@ -55,12 +56,12 @@ c:/Grade_CalcMoha
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Starts the Express server with Vite middleware (development). |
-| `npm run check` | Runs the TypeScript compiler on server & client for type safety. |
-| `npm run build` | Generates a production build (Vite client + bundled server). |
-| `npm start` | Serves the bundled Express app from `dist/` (production). |
+| `npm run dev` | Starts the Vite development server. |
+| `npm run check` | Runs the TypeScript compiler for static type checks. |
+| `npm run build` | Generates the production bundle in `dist/`. |
+| `npm run preview` | Serves the production bundle locally for testing. |
 
-> The React dashboard is accessible via the Express dev server. If you prefer a standalone client run, execute `npm install` and `npm run dev` inside the `client/` folder to use Vite's preview server.
+> The React dashboard now runs entirely on the client. Server code has been decoupled so deployment targets like Vercel only need to build and host the static front-end.
 
 ## Data Import Guides
 
@@ -104,6 +105,16 @@ The export button in the header generates a DOCX file containing:
 
 If structured data is unavailable, the exporter falls back to the rendered DOM sections so the report always contains at least the visible text and tables.
 
+## Deploying to Vercel
+
+1. Push the project to GitHub (or connect directly via Vercel CLI).
+2. In Vercel, create a new project and select this repository.
+3. When prompted for the framework preset, choose **Vite** (or **Other** and set the following manually):
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. Set the root directory to the repository root (no subdirectory needed).
+5. Deploy — Vercel will install dependencies, build the static bundle, and serve it globally.
+
 ## Testing & Quality
 
 - `npm run check` ensures both server and client TypeScript code compile cleanly.
@@ -111,10 +122,7 @@ If structured data is unavailable, the exporter falls back to the rendered DOM s
 
 ## Contributing & Customisation
 
-- Tailwind theme tokens live in `tailwind.config.ts` and `client/src/index.css`.
-- Add or tweak components under `client/src/components/ui` using shadcn/ui patterns.
-- Extend export data in `client/src/lib/reportExport.ts` if you introduce new dashboard sections.
+- Tailwind theme tokens live in `tailwind.config.ts` and `src/index.css`.
+- Add or tweak components under `src/components/ui` using shadcn/ui patterns.
+- Extend export data in `src/lib/reportExport.ts` if you introduce new dashboard sections.
 
-## License
-
-This project is released under the MIT License. See [LICENSE](LICENSE) if provided, or add one to set distribution terms.
