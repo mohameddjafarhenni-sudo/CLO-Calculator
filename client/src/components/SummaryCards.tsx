@@ -2,96 +2,110 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, Award, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-export default function SummaryCards() {
-  const stats = [
+export type SummaryStats = {
+  studentsCount: number;
+  averageAchievement: number;
+  successRate: number;
+  successCount: number;
+  outcomesCount: number;
+  cloCoverage: Array<{
+    code: string;
+    label: string;
+    percentage: number;
+  }>;
+};
+
+interface SummaryCardsProps {
+  stats: SummaryStats;
+}
+
+export default function SummaryCards({ stats }: SummaryCardsProps) {
+  const cards = [
     {
       title: 'عدد الطلاب',
-      value: '3',
+      value: stats.studentsCount.toString(),
       icon: Users,
-      color: 'border-r-primary',
-      bgColor: 'bg-primary/5',
+      highlight: 'طلاب مسجلون في المقرر',
+      gradient: 'from-primary to-emerald-500'
     },
     {
-      title: 'متوسط الدرجات',
-      value: '94.7',
+      title: 'متوسط التحصيل',
+      value: stats.averageAchievement.toFixed(1),
       suffix: '%',
       icon: TrendingUp,
-      color: 'border-r-chart-2',
-      bgColor: 'bg-chart-2/5',
+      highlight: 'متوسط درجات البنود الحالية',
+      gradient: 'from-emerald-500 to-cyan-500'
     },
     {
       title: 'نسبة النجاح',
-      value: '100',
+      value: stats.successRate.toString(),
       suffix: '%',
       icon: Award,
-      color: 'border-r-chart-2',
-      bgColor: 'bg-chart-2/5',
+      highlight: 'طلاب تجاوزوا حد الإنجاز',
+      gradient: 'from-secondary to-amber-500'
     },
     {
       title: 'نواتج التعلم',
-      value: '4',
+      value: stats.outcomesCount.toString(),
       icon: AlertCircle,
-      color: 'border-r-chart-3',
-      bgColor: 'bg-chart-3/5',
+      highlight: 'محاور قياس فعّالة',
+      gradient: 'from-slate-900 to-slate-700'
     },
   ];
 
-  const cloAchievement = [
-    { code: 'CLO-1', label: 'المفاهيم الأساسية', percentage: 92, color: 'bg-chart-2' },
-    { code: 'CLO-2', label: 'حل المشكلات', percentage: 95, color: 'bg-chart-2' },
-    { code: 'CLO-3', label: 'التحليل والتصميم', percentage: 88, color: 'bg-chart-2' },
-    { code: 'CLO-4', label: 'العمل الجماعي', percentage: 90, color: 'bg-chart-2' },
-  ];
+  const cloAchievement = stats.cloCoverage.length
+    ? stats.cloCoverage
+    : [
+        { code: 'CLO-1', label: 'المفاهيم الأساسية', percentage: 0 },
+      ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
+    <section className="iu-section p-6 space-y-6" data-report-section="summary-cards">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map((stat, index) => {
           const Icon = stat.icon;
+          const value = stat.suffix ? `${stat.value}${stat.suffix}` : stat.value;
           return (
-            <Card 
-              key={index} 
-              className={`border-r-4 ${stat.color} ${stat.bgColor}`}
+            <article
+              key={stat.title}
+              className={`rounded-3xl p-5 text-white bg-gradient-to-br ${stat.gradient} shadow-lg shadow-black/10 border border-white/10`}
               data-testid={`card-stat-${index}`}
             >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="font-roboto text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <Icon className="h-5 w-5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="font-roboto text-3xl font-bold" dir="ltr">
-                  {stat.value}{stat.suffix || ''}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-white/70 mb-2">{stat.title}</p>
+                  <p className="text-3xl font-bold" dir="ltr">{value}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <span className="w-12 h-12 rounded-full bg-white/15 border border-white/30 flex items-center justify-center">
+                  <Icon className="w-5 h-5" />
+                </span>
+              </div>
+              <p className="text-xs text-white/80 mt-3">{stat.highlight}</p>
+            </article>
           );
         })}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-roboto text-lg">نسب تحقيق نواتج التعلم</CardTitle>
+      <Card className="border-none shadow-none bg-transparent">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold text-foreground">نسب تحقيق نواتج التعلم</CardTitle>
+          <p className="text-sm text-muted-foreground">تتبع أداء المكونات الرئيسية وربطه بمحاور الاعتماد</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {cloAchievement.map((clo, index) => (
             <div key={index} className="space-y-2" data-testid={`clo-achievement-${index}`}>
               <div className="flex justify-between items-center">
                 <div>
-                  <span className="font-roboto font-medium text-sm">{clo.code}</span>
-                  <span className="text-sm text-muted-foreground mr-2">- {clo.label}</span>
+                  <span className="text-sm font-semibold text-primary">{clo.code}</span>
+                  <span className="text-sm text-muted-foreground mr-2">{clo.label}</span>
                 </div>
-                <span className="font-roboto font-bold text-sm" dir="ltr">{clo.percentage}%</span>
+                <span className="font-bold text-sm" dir="ltr">{clo.percentage}%</span>
               </div>
-              <Progress 
-                value={clo.percentage} 
-                className="h-2"
-              />
+              <Progress value={clo.percentage} className="h-2 bg-muted" />
             </div>
           ))}
         </CardContent>
       </Card>
-    </div>
+    </section>
   );
 }

@@ -19,97 +19,24 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { Assessment, GradeEntry, Question } from "@/types/course";
 
-interface Question {
-  id: string;
-  label: string;
-  outcomeCode: string;
+interface GradesTableProps {
+  assessments: Assessment[];
+  grades: GradeEntry[];
+  onAssessmentsChange: (assessments: Assessment[]) => void;
+  onGradesChange: (grades: GradeEntry[]) => void;
 }
 
-interface Assessment {
-  id: string;
-  label: string;
-  questions: Question[];
-}
-
-interface GradeEntry {
-  studentId: string;
-  studentName: string;
-  grades: { [key: string]: number };
-  total: number;
-}
-
-export default function GradesTable() {
+export default function GradesTable({
+  assessments,
+  grades,
+  onAssessmentsChange,
+  onGradesChange,
+}: GradesTableProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [assessments, setAssessments] = useState<Assessment[]>([
-    {
-      id: 'quiz1',
-      label: 'اختبار فصلي 1',
-      questions: [
-        { id: 'q1', label: 'س1', outcomeCode: '1.1' },
-        { id: 'q2', label: 'س2', outcomeCode: '1.2' },
-        { id: 'q3', label: 'س3', outcomeCode: '2.2' },
-        { id: 'q4', label: 'س4', outcomeCode: '2.3' },
-      ]
-    },
-    {
-      id: 'quiz2',
-      label: 'اختبار فصلي 2',
-      questions: [
-        { id: 'q1', label: 'س1', outcomeCode: '1.2' },
-        { id: 'q2', label: 'س2', outcomeCode: '1.3' },
-        { id: 'q3', label: 'س3', outcomeCode: '2.1' },
-        { id: 'q4', label: 'س4', outcomeCode: '1.3' },
-      ]
-    },
-    {
-      id: 'assignments',
-      label: 'الواجبات',
-      questions: [
-        { id: 'q1', label: 'س1', outcomeCode: '1.2' },
-        { id: 'q2', label: 'س2', outcomeCode: '1.3' },
-        { id: 'q3', label: 'س3', outcomeCode: '2.2' },
-        { id: 'q4', label: 'س4', outcomeCode: '2.3' },
-      ]
-    },
-    {
-      id: 'final',
-      label: 'الاختبار النهائي',
-      questions: [
-        { id: 'q1', label: 'س1', outcomeCode: '1.2' },
-        { id: 'q2', label: 'س2', outcomeCode: '2.2' },
-        { id: 'q3', label: 'س3', outcomeCode: '1.2' },
-        { id: 'q4', label: 'س4', outcomeCode: '2.3' },
-      ]
-    },
-  ]);
-
-  const [grades, setGrades] = useState<GradeEntry[]>([
-    {
-      studentId: '202301001',
-      studentName: 'أحمد محمد علي',
-      grades: {
-        'quiz1_q1': 1.1, 'quiz1_q2': 1.2, 'quiz1_q3': 2.2, 'quiz1_q4': 2.3,
-        'quiz2_q1': 1.2, 'quiz2_q2': 1.3, 'quiz2_q3': 2.1, 'quiz2_q4': 1.3,
-        'assignments_q1': 1.2, 'assignments_q2': 1.3, 'assignments_q3': 2.2, 'assignments_q4': 2.3,
-        'final_q1': 1.2, 'final_q2': 2.2, 'final_q3': 1.2, 'final_q4': 2.3,
-      },
-      total: 0
-    },
-    {
-      studentId: '202301002',
-      studentName: 'فاطمة سعيد',
-      grades: {
-        'quiz1_q1': 1.0, 'quiz1_q2': 1.1, 'quiz1_q3': 2.0, 'quiz1_q4': 2.2,
-        'quiz2_q1': 1.1, 'quiz2_q2': 1.2, 'quiz2_q3': 2.0, 'quiz2_q4': 1.2,
-        'assignments_q1': 1.1, 'assignments_q2': 1.2, 'assignments_q3': 2.1, 'assignments_q4': 2.2,
-        'final_q1': 1.1, 'final_q2': 2.1, 'final_q3': 1.1, 'final_q4': 2.2,
-      },
-      total: 0
-    },
-  ]);
 
   const [isStructureDialogOpen, setIsStructureDialogOpen] = useState(false);
   const [editingAssessment, setEditingAssessment] = useState<Assessment | null>(null);
@@ -122,7 +49,7 @@ export default function GradesTable() {
 
   const updateGrade = (studentId: string, field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
-    setGrades(grades.map(g => {
+    onGradesChange(grades.map(g => {
       if (g.studentId === studentId) {
         const updated = {
           ...g,
@@ -145,7 +72,7 @@ export default function GradesTable() {
       questions: []
     };
     
-    setAssessments([...assessments, newAssessment]);
+    onAssessmentsChange([...assessments, newAssessment]);
     setAssessmentForm({ label: '' });
     toast({
       title: "تمت الإضافة",
@@ -154,9 +81,9 @@ export default function GradesTable() {
   };
 
   const handleDeleteAssessment = (assessmentId: string) => {
-    setAssessments(assessments.filter(a => a.id !== assessmentId));
+    onAssessmentsChange(assessments.filter(a => a.id !== assessmentId));
     // Remove grades for this assessment
-    setGrades(grades.map(g => {
+    onGradesChange(grades.map(g => {
       const newGrades = { ...g.grades };
       Object.keys(newGrades).forEach(key => {
         if (key.startsWith(assessmentId + '_')) {
@@ -179,7 +106,7 @@ export default function GradesTable() {
   const handleSaveAssessmentEdit = () => {
     if (!editingAssessment) return;
     
-    setAssessments(assessments.map(a =>
+    onAssessmentsChange(assessments.map(a =>
       a.id === editingAssessment.id ? { ...a, label: assessmentForm.label } : a
     ));
     setEditingAssessment(null);
@@ -199,14 +126,14 @@ export default function GradesTable() {
       outcomeCode: questionForm.outcomeCode
     };
 
-    setAssessments(assessments.map(a =>
+    onAssessmentsChange(assessments.map(a =>
       a.id === assessmentId
         ? { ...a, questions: [...a.questions, newQuestion] }
         : a
     ));
 
     // Add grade field for all students
-    setGrades(grades.map(g => ({
+      onGradesChange(grades.map(g => ({
       ...g,
       grades: { ...g.grades, [`${assessmentId}_${newQuestion.id}`]: 0 }
     })));
@@ -219,7 +146,7 @@ export default function GradesTable() {
   };
 
   const handleDeleteQuestion = (assessmentId: string, questionId: string) => {
-    setAssessments(assessments.map(a =>
+    onAssessmentsChange(assessments.map(a =>
       a.id === assessmentId
         ? { ...a, questions: a.questions.filter(q => q.id !== questionId) }
         : a
@@ -227,7 +154,7 @@ export default function GradesTable() {
 
     // Remove grade field for all students
     const fieldKey = `${assessmentId}_${questionId}`;
-    setGrades(grades.map(g => {
+      onGradesChange(grades.map(g => {
       const newGrades = { ...g.grades };
       delete newGrades[fieldKey];
       return { ...g, grades: newGrades, total: calculateTotal({ ...g, grades: newGrades }) };
@@ -240,7 +167,7 @@ export default function GradesTable() {
   };
 
   const handleEditQuestion = (assessmentId: string, questionId: string, outcomeCode: string) => {
-    setAssessments(assessments.map(a =>
+    onAssessmentsChange(assessments.map(a =>
       a.id === assessmentId
         ? {
             ...a,
@@ -299,7 +226,7 @@ export default function GradesTable() {
           importedGrades.push(gradeEntry);
         }
 
-        setGrades(importedGrades);
+  onGradesChange(importedGrades);
         toast({
           title: "تم الاستيراد",
           description: `تم استيراد ${importedGrades.length} درجات`,
@@ -340,7 +267,7 @@ export default function GradesTable() {
             data-testid="button-import-grades"
           >
             <Upload className="w-4 h-4 ml-2" />
-            استيراد من Excel
+          إستيراد من ملف
           </Button>
           <Button
             onClick={() => setIsStructureDialogOpen(true)}

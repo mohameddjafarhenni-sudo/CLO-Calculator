@@ -19,23 +19,39 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Student } from "@/types/course";
+import * as XLSX from "xlsx";
 
-interface Student {
-  id: string;
-  studentId: string;
-  name: string;
-  email: string;
-  phone: string;
+interface StudentsTableProps {
+  students: Student[];
+  onStudentsChange: (students: Student[]) => void;
 }
 
-export default function StudentsTable() {
+const CSV_ENCODINGS = ["utf-8", "windows-1256", "iso-8859-6"] as const;
+
+const hasEncodingArtifacts = (text: string) => /�|\?{3,}/.test(text);
+
+async function decodeCsvFile(file: File) {
+  const buffer = await file.arrayBuffer();
+
+  for (const encoding of CSV_ENCODINGS) {
+    try {
+      const decoder = new TextDecoder(encoding, { fatal: false });
+      const decoded = decoder.decode(buffer);
+      if (!hasEncodingArtifacts(decoded)) {
+        return decoded;
+      }
+    } catch (error) {
+      console.warn(`فشل فك ترميز الملف بصيغة ${encoding}`, error);
+    }
+  }
+
+  return new TextDecoder().decode(buffer);
+}
+
+export default function StudentsTable({ students, onStudentsChange }: StudentsTableProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [students, setStudents] = useState<Student[]>([
-    { id: '1', studentId: '202301001', name: 'أحمد محمد علي', email: 'ahmed@example.com', phone: '0501234567' },
-    { id: '2', studentId: '202301002', name: 'فاطمة سعيد', email: 'fatima@example.com', phone: '0509876543' },
-    { id: '3', studentId: '202301003', name: 'محمد خالد', email: 'mohammed@example.com', phone: '0555551234' },
-  ]);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -54,13 +70,13 @@ export default function StudentsTable() {
   };
 
   const handleDelete = (id: string) => {
-    setStudents(students.filter(s => s.id !== id));
+    onStudentsChange(students.filter(s => s.id !== id));
     console.log('Delete student:', id);
   };
 
   const handleSave = () => {
     if (editingStudent) {
-      setStudents(students.map(s => 
+      onStudentsChange(students.map(s => 
         s.id === editingStudent.id 
           ? { ...s, ...formData }
           : s
@@ -71,58 +87,90 @@ export default function StudentsTable() {
         id: Date.now().toString(),
         ...formData
       };
-      setStudents([...students, newStudent]);
+  onStudentsChange([...students, newStudent]);
       console.log('Added new student:', newStudent);
     }
     setIsDialogOpen(false);
   };
 
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result as string;
-        const lines = text.split('\n').filter(line => line.trim());
-        
-        // Skip header row if present
-        const dataLines = lines[0].includes('الرقم الجامعي') || lines[0].includes('studentId') 
-          ? lines.slice(1) 
-          : lines;
-        
-        const importedStudents: Student[] = dataLines.map((line, index) => {
-          const [studentId, name, email, phone] = line.split(',').map(s => s.trim());
-          return {
-            id: Date.now().toString() + index,
-            studentId: studentId || '',
-            name: name || '',
-            email: email || '',
-            phone: phone || ''
-          };
-        }).filter(s => s.studentId); // Only include rows with student ID
+    try {
+      const isExcel = /\.xlsx?$/i.test(file.name);
+      let importedStudents: Student[] = [];
 
-        setStudents([...students, ...importedStudents]);
-        toast({
-          title: "تم استيراد البيانات",
-          description: `تم إضافة ${importedStudents.length} طالب`,
-        });
-        console.log('Imported students:', importedStudents);
-      } catch (error) {
-        toast({
-          title: "خطأ في الاستيراد",
-          description: "تأكد من صحة تنسيق الملف",
-          variant: "destructive",
-        });
-        console.error('Import error:', error);
+      if (isExcel) {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
+
+        const hasHeader =
+          jsonData.length > 0 &&
+          /الرقم الجامعي|studentId/i.test(String(jsonData[0][0] ?? ""));
+        const dataRows = hasHeader ? jsonData.slice(1) : jsonData;
+
+        importedStudents = dataRows
+          .map((row, index) => ({
+            id: Date.now().toString() + index,
+            studentId: String(row[0] ?? "").trim(),
+            name: String(row[1] ?? "").trim(),
+            email: String(row[2] ?? "").trim(),
+            phone: String(row[3] ?? "").trim(),
+          }))
+          .filter((student) => student.studentId);
+      } else {
+        const text = await decodeCsvFile(file);
+        const lines = text
+          .split(/\r?\n/)
+          .map((line) => line.replace(/\ufeff/g, ""))
+          .filter((line) => line.trim());
+
+        if (!lines.length) {
+          throw new Error("Empty file");
+        }
+
+        const hasHeader = /الرقم الجامعي|studentId/i.test(lines[0]);
+        const dataLines = hasHeader ? lines.slice(1) : lines;
+
+        importedStudents = dataLines
+          .map((line, index) => {
+            const columns = line.split(",").map((value) => value.trim());
+            const [studentId, name, email, phone] = columns;
+            return {
+              id: Date.now().toString() + index,
+              studentId: studentId || "",
+              name: name || "",
+              email: email || "",
+              phone: phone || "",
+            };
+          })
+          .filter((student) => student.studentId);
       }
-    };
-    reader.readAsText(file);
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+
+      if (!importedStudents.length) {
+        throw new Error("No rows detected");
+      }
+
+  onStudentsChange([...students, ...importedStudents]);
+      toast({
+        title: "تم استيراد البيانات",
+        description: `تم إضافة ${importedStudents.length} طالبًا من الملف`,
+      });
+    } catch (error) {
+      console.error("Import error:", error);
+      toast({
+        title: "خطأ في الاستيراد",
+        description: "تعذر قراءة الملف بسبب الترميز أو التنسيق.",
+        variant: "destructive",
+      });
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -134,7 +182,7 @@ export default function StudentsTable() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.txt"
+            accept=".csv,.txt,.xlsx,.xls"
             onChange={handleImport}
             className="hidden"
             data-testid="input-import-file"

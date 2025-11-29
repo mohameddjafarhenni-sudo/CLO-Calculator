@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,27 +19,19 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { CLOItem } from "@/types/course";
 
-interface CLOItem {
-  id: string;
-  code: string;
-  description: string;
-  weight: number;
+interface SyllabusTableProps {
+  items: CLOItem[];
+  onItemsChange: (items: CLOItem[]) => void;
 }
 
-export default function SyllabusTable() {
-  const [cloItems, setCloItems] = useState<CLOItem[]>([
-    { id: '1', code: 'CLO-1', description: 'القدرة على فهم المفاهيم الأساسية للبرمجة', weight: 25 },
-    { id: '2', code: 'CLO-2', description: 'تطبيق خوارزميات حل المشكلات البرمجية', weight: 30 },
-    { id: '3', code: 'CLO-3', description: 'تحليل وتصميم البرامج البسيطة', weight: 25 },
-    { id: '4', code: 'CLO-4', description: 'العمل الجماعي وإدارة المشاريع', weight: 20 },
-  ]);
-  
+export default function SyllabusTable({ items, onItemsChange }: SyllabusTableProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CLOItem | null>(null);
   const [formData, setFormData] = useState({ code: '', description: '', weight: 0 });
 
-  const totalWeight = cloItems.reduce((sum, item) => sum + item.weight, 0);
+  const totalWeight = useMemo(() => items.reduce((sum, item) => sum + item.weight, 0), [items]);
 
   const handleAdd = () => {
     setEditingItem(null);
@@ -54,24 +46,26 @@ export default function SyllabusTable() {
   };
 
   const handleDelete = (id: string) => {
-    setCloItems(cloItems.filter(item => item.id !== id));
+    onItemsChange(items.filter(item => item.id !== id));
     console.log('Delete CLO:', id);
   };
 
   const handleSave = () => {
     if (editingItem) {
-      setCloItems(cloItems.map(item => 
-        item.id === editingItem.id 
-          ? { ...item, ...formData }
-          : item
-      ));
+      onItemsChange(
+        items.map((item) =>
+          item.id === editingItem.id
+            ? { ...item, ...formData }
+            : item
+        )
+      );
       console.log('Updated CLO:', editingItem.id);
     } else {
       const newItem = {
         id: Date.now().toString(),
         ...formData
       };
-      setCloItems([...cloItems, newItem]);
+      onItemsChange([...items, newItem]);
       console.log('Added new CLO:', newItem);
     }
     setIsDialogOpen(false);
@@ -157,7 +151,7 @@ export default function SyllabusTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cloItems.map((item, index) => (
+            {items.map((item, index) => (
               <TableRow 
                 key={item.id}
                 className={index % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}
